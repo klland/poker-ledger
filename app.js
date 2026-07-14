@@ -160,7 +160,7 @@
     });
     return items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }
-  function ledgerRow(item) {
+  function ledgerRow(item, canDelete = false) {
     const meta = CLUBS[item.clubKey];
     const isSettle = item.type === 'settlement';
     const isDeposit = item.type === 'deposit';
@@ -170,10 +170,11 @@
     const valueText = isSettle ? formatMoney(value, true) : `${isDeposit ? '+' : '−'}${formatNumber(item.chips)} 籌碼`;
     const subText = isSettle ? `${value >= 0 ? '+' : '−'}${formatNumber(Math.abs(item.pnlChips))} 籌碼` : formatMoney(item.cash);
     const loss = isSettle && value < 0 ? ' loss' : '';
-    return `<article class="ledger-row ${item.type}${loss}">
+    const deleteButton = canDelete ? `<button class="record-delete" type="button" data-delete-record="${item.id}" data-club-key="${item.clubKey}" data-record-type="${item.type}" aria-label="刪除${meta.name}${title}紀錄">刪除</button>` : '';
+    return `<article class="ledger-row ${item.type}${loss}${canDelete ? ' deletable' : ''}">
       <span class="ledger-icon">${icon}</span>
       <div class="ledger-main"><strong>${meta.suit} ${meta.name} · ${title}</strong><small>${formatDateTime(item.timestamp)}${item.note ? ` · ${escapeHtml(item.note)}` : ''}</small></div>
-      <div class="ledger-value ${isSettle ? signedClass(value) : ''}"><strong>${valueText}</strong><small>${subText}</small></div>
+      <div class="ledger-value ${isSettle ? signedClass(value) : ''}"><strong>${valueText}</strong><small>${subText}</small>${deleteButton}</div>
     </article>`;
   }
   function escapeHtml(value) {
@@ -188,7 +189,23 @@
   function renderHistory() {
     let items = allLedgerItems();
     if (historyFilter !== 'all') items = items.filter((item) => item.type === historyFilter);
-    $('#historyList').innerHTML = items.length ? items.map(ledgerRow).join('') : '<div class="empty-state"><span>♣</span><p>沒有符合的紀錄</p><small>完成操作後會顯示在這裡。</small></div>';
+    $('#historyList').innerHTML = items.length ? items.map((item) => ledgerRow(item, true)).join('') : '<div class="empty-state"><span>♣</span><p>沒有符合的紀錄</p><small>完成操作後會顯示在這裡。</small></div>';
+  }
+
+  function deleteRecord(clubKey, type, id) {
+    const club = state.clubs[clubKey];
+    const collection = type === 'settlement' ? 'settlements' : 'events';
+    const record = club?.[collection]?.find((item) => item.id === id);
+    if (!record) return;
+    const meta = CLUBS[clubKey];
+    const typeLabel = type === 'settlement' ? '結算' : type === 'deposit' ? '新增籌碼' : '領出籌碼';
+    const dateLabel = new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric' }).format(new Date(record.timestamp));
+    if (!window.confirm(`確定刪除 ${dateLabel} 的${meta.name}${typeLabel}紀錄？\n刪除後會自動重算所有輸贏。`)) return;
+    club[collection] = club[collection].filter((item) => item.id !== id);
+    recalculateClub(clubKey);
+    saveState();
+    renderAll();
+    showToast('紀錄已刪除，帳務已重新計算');
   }
 
   function periodStart() {
@@ -368,6 +385,7 @@
   $('#periodTabs').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; period = button.dataset.period; $$('#periodTabs button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('.stats-club-filter').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; statsClub = button.dataset.statsClub; $$('.stats-club-filter button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('#historyFilters').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; historyFilter = button.dataset.historyFilter; $$('#historyFilters button').forEach((b) => b.classList.toggle('active', b === button)); renderHistory(); });
+  $('#historyList').addEventListener('click', (e) => { const button = e.target.closest('[data-delete-record]'); if (!button) return; deleteRecord(button.dataset.clubKey, button.dataset.recordType, button.dataset.deleteRecord); });
   $$('.sheet').forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); }));
 
   $('#resetButton').addEventListener('click', () => {

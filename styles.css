@@ -103,6 +103,9 @@ h2 { margin: 0; font-size: 29px; }
 .ledger-row.withdrawal .ledger-icon { background: rgba(201,159,82,.15); color: #8e682d; }.ledger-row.settlement.loss .ledger-icon { background: rgba(189,74,66,.1); color: var(--red); }
 .ledger-main strong, .ledger-main small { display: block; }.ledger-main strong { font-size: 13px; }.ledger-main small { color: var(--muted); font-size: 9px; margin-top: 3px; }
 .ledger-value { text-align: right; }.ledger-value strong, .ledger-value small { display: block; }.ledger-value strong { font-family: "Iowan Old Style", Georgia, serif; font-size: 16px; }.ledger-value small { color: var(--muted); font-size: 9px; margin-top: 2px; }
+.ledger-row.deletable { align-items: start; }
+.record-delete { min-width: 48px; min-height: 27px; margin: 7px 0 0 auto; padding: 4px 8px; border: 1px solid rgba(189,74,66,.22); border-radius: 7px; background: rgba(189,74,66,.06); color: var(--red); font-size: 9px; font-weight: 800; }
+.record-delete:active { background: var(--red); color: white; transform: scale(.96); }
 .page-heading { padding: calc(30px + env(safe-area-inset-top, 0px)) 20px 18px; background: var(--felt); color: var(--paper-bright); }
 .page-heading h2 { font-size: 34px; }.page-heading > p:last-child { color: rgba(255,255,255,.53); font-size: 11px; margin: 7px 0 0; }
 .period-tabs { margin: 15px 18px 8px; display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(20,33,30,.07); border-radius: 11px; padding: 4px; }

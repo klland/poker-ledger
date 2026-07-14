@@ -67,6 +67,19 @@ const assert = require('node:assert/strict');
   assert.equal(await page.textContent('#totalProfit'), '+NT$16,050');
   assert.equal(await page.textContent('#totalDeposits'), 'NT$80,100');
 
+  await page.click('[data-nav="history"]');
+  const flushDepositDelete = page.locator('.record-delete[data-club-key="flush"][data-record-type="deposit"]');
+  assert.equal(await flushDepositDelete.count(), 1);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: '/private/tmp/poker-ledger-delete-record.png', fullPage: false });
+  page.once('dialog', (dialog) => dialog.accept());
+  await flushDepositDelete.click();
+  assert.equal(await page.locator('.record-delete[data-club-key="flush"][data-record-type="deposit"]').count(), 0);
+  await page.click('[data-nav="home"]');
+  await page.click('[data-club="flush"]');
+  assert.equal(await page.textContent('#chipBalance'), '150');
+  assert.equal(await page.textContent('#totalProfit'), '+NT$150');
+
   await page.click('[data-nav="stats"]');
   assert.equal(await page.textContent('#periodProfit'), '+NT$16,000');
   assert.equal(await page.textContent('#winRate'), '100%');
