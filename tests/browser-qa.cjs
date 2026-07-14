@@ -78,6 +78,10 @@ const assert = require('node:assert/strict');
   }));
   assert.ok(layout.documentWidth <= layout.viewport, `page overflows by ${layout.documentWidth - layout.viewport}px`);
   assert.ok(layout.metricEdges.every((edge) => edge <= layout.viewport), 'a statistics card exceeds the viewport');
+  await page.click('#settingsButton');
+  assert.equal(await page.textContent('#settingsDialog h2'), '帳房設定');
+  assert.equal(await page.locator('#exportButton, #importInput').count(), 0);
+  await page.click('#settingsDialog .sheet-close');
   assert.deepEqual(errors, []);
 
   await page.screenshot({ path: '/private/tmp/poker-ledger-mobile.png', fullPage: true });

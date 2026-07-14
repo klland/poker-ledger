@@ -370,18 +370,6 @@
   $('#historyFilters').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; historyFilter = button.dataset.historyFilter; $$('#historyFilters button').forEach((b) => b.classList.toggle('active', b === button)); renderHistory(); });
   $$('.sheet').forEach((dialog) => dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); }));
 
-  $('#exportButton').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `牌桌帳房備份-${dayKey(new Date())}.json`; link.click(); URL.revokeObjectURL(link.href); showToast('備份檔已匯出');
-  });
-  $('#importInput').addEventListener('change', async (e) => {
-    try {
-      const data = JSON.parse(await e.target.files[0].text());
-      if (!data?.clubs?.flush || !data?.clubs?.malay) throw new Error('invalid');
-      state = data; Object.keys(CLUBS).forEach(recalculateClub); saveState(); renderAll(); $('#settingsDialog').close(); showToast('備份已成功匯入');
-    } catch (_) { showToast('無法讀取這個備份檔'); }
-    e.target.value = '';
-  });
   $('#resetButton').addEventListener('click', () => {
     if (!window.confirm('確定要清除所有籌碼與結算紀錄嗎？此動作無法復原。')) return;
     state = initialState(); saveState(); renderAll(); $('#settingsDialog').close(); showToast('所有資料已清除');
