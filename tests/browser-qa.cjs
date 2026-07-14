@@ -51,12 +51,12 @@ const assert = require('node:assert/strict');
   // that settlement without adding the same chips twice to the current balance.
   await page.click('[data-club="flush"]');
   await page.click('[data-open="settleDialog"]');
-  await page.fill('#settleForm [name="timestamp"]', '2026-06-15T20:00');
+  await page.fill('#settleForm [name="timestamp"]', '2026-06-15');
   await page.fill('#settleForm [name="chips"]', '150');
   await page.click('#settleForm button[type="submit"]');
   assert.equal(await page.textContent('#totalProfit'), '+NT$150');
   await page.click('[data-open="depositDialog"]');
-  await page.fill('#depositForm [name="timestamp"]', '2026-06-15T12:00');
+  await page.fill('#depositForm [name="timestamp"]', '2026-06-15');
   await page.fill('#depositForm [name="chips"]', '100');
   await page.click('#depositForm button[type="submit"]');
   assert.equal(await page.textContent('#chipBalance'), '150');

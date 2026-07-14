@@ -31,11 +31,14 @@
   const recordTime = (record) => new Date(record.timestamp).getTime() || 0;
   const createdTime = (record) => new Date(record.createdAt || record.timestamp).getTime() || recordTime(record);
   const compareRecords = (a, b) => recordTime(a) - recordTime(b) || createdTime(a) - createdTime(b);
-  const toDateTimeInput = (date = new Date()) => {
+  const toDateInput = (date = new Date()) => {
     const offset = date.getTimezoneOffset() * 60000;
-    return new Date(date.getTime() - offset).toISOString().slice(0, 19);
+    return new Date(date.getTime() - offset).toISOString().slice(0, 10);
   };
-  const toTimestamp = (value) => new Date(value).toISOString();
+  const toTimestamp = (value, type = 'deposit') => {
+    const time = type === 'withdrawal' ? '23:00:00' : type === 'settlement' ? '20:00:00' : '12:00:00';
+    return new Date(`${value}T${time}`).toISOString();
+  };
 
   function loadState() {
     try {
@@ -95,8 +98,8 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
   }
   function signedClass(n) { return n > 0 ? 'positive' : n < 0 ? 'negative' : 'neutral'; }
-  function formatDateTime(timestamp) {
-    return new Intl.DateTimeFormat('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(timestamp));
+  function formatRecordDate(timestamp) {
+    return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric' }).format(new Date(timestamp));
   }
 
   function renderHome() {
@@ -173,7 +176,7 @@
     const deleteButton = canDelete ? `<button class="record-delete" type="button" data-delete-record="${item.id}" data-club-key="${item.clubKey}" data-record-type="${item.type}" aria-label="刪除${meta.name}${title}紀錄">刪除</button>` : '';
     return `<article class="ledger-row ${item.type}${loss}${canDelete ? ' deletable' : ''}">
       <span class="ledger-icon">${icon}</span>
-      <div class="ledger-main"><strong>${meta.suit} ${meta.name} · ${title}</strong><small>${formatDateTime(item.timestamp)}${item.note ? ` · ${escapeHtml(item.note)}` : ''}</small></div>
+      <div class="ledger-main"><strong>${meta.suit} ${meta.name} · ${title}</strong><small>${formatRecordDate(item.timestamp)}${item.note ? ` · ${escapeHtml(item.note)}` : ''}</small></div>
       <div class="ledger-value ${isSettle ? signedClass(value) : ''}"><strong>${valueText}</strong><small>${subText}</small>${deleteButton}</div>
     </article>`;
   }
@@ -298,7 +301,7 @@
     }
     const club = currentClub();
     const meta = clubMeta();
-    const nowValue = toDateTimeInput();
+    const nowValue = toDateInput();
     if (id === 'depositDialog') {
       $('#depositForm').reset(); $('#depositForm [name="timestamp"]').value = nowValue; $('#depositPreview').textContent = 'NT$0';
     } else if (id === 'withdrawDialog') {
@@ -353,7 +356,7 @@
   function updateSettlePreview() {
     const chips = toInt($('#settleForm [name="chips"]').value);
     const timestampValue = $('#settleForm [name="timestamp"]').value;
-    const result = estimateSettlement(chips, timestampValue ? toTimestamp(timestampValue) : new Date().toISOString());
+    const result = estimateSettlement(chips, timestampValue ? toTimestamp(timestampValue, 'settlement') : new Date().toISOString());
     $('#bookBalance').textContent = formatNumber(result.previousClose + result.flows.deposits - result.flows.withdrawals);
     const box = $('#settleResultPreview');
     box.className = `result-preview ${signedClass(result.pnlCash)}`;
@@ -379,9 +382,9 @@
   $('#withdrawForm [name="chips"]').addEventListener('input', (e) => $('#withdrawPreview').textContent = formatMoney(toInt(e.target.value) * clubMeta().rate));
   $('#settleForm [name="chips"]').addEventListener('input', updateSettlePreview);
   $('#settleForm [name="timestamp"]').addEventListener('input', updateSettlePreview);
-  $('#depositForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入新增籌碼量'); addDeposit(chips, data.get('note').trim(), toTimestamp(data.get('timestamp'))); $('#depositDialog').close(); });
-  $('#withdrawForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入領出籌碼量'); if (addWithdrawal(chips, data.get('note').trim(), toTimestamp(data.get('timestamp')))) $('#withdrawDialog').close(); });
-  $('#settleForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); addSettlement(toInt(data.get('chips')), data.get('note').trim(), toTimestamp(data.get('timestamp'))); $('#settleDialog').close(); });
+  $('#depositForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入新增籌碼量'); addDeposit(chips, data.get('note').trim(), toTimestamp(data.get('timestamp'), 'deposit')); $('#depositDialog').close(); });
+  $('#withdrawForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入領出籌碼量'); if (addWithdrawal(chips, data.get('note').trim(), toTimestamp(data.get('timestamp'), 'withdrawal'))) $('#withdrawDialog').close(); });
+  $('#settleForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); addSettlement(toInt(data.get('chips')), data.get('note').trim(), toTimestamp(data.get('timestamp'), 'settlement')); $('#settleDialog').close(); });
   $('#periodTabs').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; period = button.dataset.period; $$('#periodTabs button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('.stats-club-filter').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; statsClub = button.dataset.statsClub; $$('.stats-club-filter button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('#historyFilters').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; historyFilter = button.dataset.historyFilter; $$('#historyFilters button').forEach((b) => b.classList.toggle('active', b === button)); renderHistory(); });
