@@ -1,0 +1,14 @@
+{
+  "name": "牌桌帳房｜德撲籌碼紀錄",
+  "short_name": "牌桌帳房",
+  "description": "花順與馬來俱樂部德撲籌碼、輸贏與領出紀錄",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#102c27",
+  "theme_color": "#102c27",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

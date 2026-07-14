@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#102c27" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="牌桌帳房" />
+  <meta name="description" content="花順與馬來俱樂部的德撲籌碼、輸贏與領出紀錄。" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>牌桌帳房</title>
+</head>
+<body>
+  <div class="felt-noise" aria-hidden="true"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" id="todayLabel"></p>
+        <h1>牌桌帳房</h1>
+      </div>
+      <button class="icon-button" id="settingsButton" aria-label="開啟設定">
+        <span aria-hidden="true">•••</span>
+      </button>
+    </header>
+
+    <main>
+      <section class="view active" id="homeView" data-view="home">
+        <div class="club-switcher" role="tablist" aria-label="俱樂部">
+          <button role="tab" class="club-tab active" data-club="flush" aria-selected="true">
+            <span class="club-suit">♠</span><span>花順</span><small>1 : 1</small>
+          </button>
+          <button role="tab" class="club-tab" data-club="malay" aria-selected="false">
+            <span class="club-suit">♦</span><span>馬來</span><small>1 : 8</small>
+          </button>
+        </div>
+
+        <article class="balance-card reveal">
+          <div class="card-topline">
+            <span id="activeClubLabel">花順俱樂部</span>
+            <span class="rate-pill" id="activeRateLabel">1 籌碼 = NT$1</span>
+          </div>
+          <p class="balance-label">目前持有籌碼</p>
+          <div class="balance-number"><strong id="chipBalance">0</strong><span>籌碼</span></div>
+          <div class="value-line">目前價值 <strong id="chipValue">NT$0</strong></div>
+          <div class="profit-stamp neutral" id="profitStamp">
+            <span>累計淨輸贏</span>
+            <strong id="totalProfit">NT$0</strong>
+          </div>
+        </article>
+
+        <div class="quick-actions reveal delay-1">
+          <button class="action-button primary" data-open="settleDialog">
+            <span class="action-icon">✓</span><span><strong>今日結算</strong><small>輸入收桌籌碼</small></span>
+          </button>
+          <button class="action-button" data-open="depositDialog">
+            <span class="action-icon">＋</span><span><strong>新增籌碼</strong><small>買入或加碼</small></span>
+          </button>
+          <button class="action-button" data-open="withdrawDialog">
+            <span class="action-icon">↗</span><span><strong>領出籌碼</strong><small>換回台幣</small></span>
+          </button>
+        </div>
+
+        <section class="summary-strip reveal delay-2" aria-label="帳戶摘要">
+          <div><span>累計投入</span><strong id="totalDeposits">NT$0</strong></div>
+          <div><span>累計領出</span><strong id="totalWithdrawals">NT$0</strong></div>
+          <div><span>已結算場次</span><strong id="settlementCount">0</strong></div>
+        </section>
+
+        <section class="section-block reveal delay-3">
+          <div class="section-heading">
+            <div><p class="eyebrow">LATEST LEDGER</p><h2>最近紀錄</h2></div>
+            <button class="text-button" data-nav-target="history">查看全部</button>
+          </div>
+          <div class="empty-state" id="recentEmpty">
+            <span>♣</span><p>還沒有紀錄</p><small>先新增籌碼，牌局結束後再做今日結算。</small>
+          </div>
+          <div class="ledger-list" id="recentList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="statsView" data-view="stats">
+        <div class="page-heading">
+          <p class="eyebrow">PERFORMANCE</p>
+          <h2>戰績統計</h2>
+          <p>以每日結算結果計算，不受籌碼是否領出影響。</p>
+        </div>
+        <div class="period-tabs" id="periodTabs" role="tablist" aria-label="統計期間">
+          <button class="active" data-period="week">本週</button>
+          <button data-period="month">本月</button>
+          <button data-period="all">全部</button>
+        </div>
+        <div class="stats-club-filter">
+          <button class="active" data-stats-club="all">兩間合計</button>
+          <button data-stats-club="flush">花順</button>
+          <button data-stats-club="malay">馬來</button>
+        </div>
+        <div class="metric-grid">
+          <article class="metric featured"><span>期間淨輸贏</span><strong id="periodProfit">NT$0</strong><small id="periodSubline">尚無結算</small></article>
+          <article class="metric"><span>勝率</span><strong id="winRate">—</strong><small id="winRecord">0 勝 / 0 天</small></article>
+          <article class="metric"><span>最佳單日</span><strong id="bestDay">—</strong><small id="bestDayDate">尚無資料</small></article>
+          <article class="metric"><span>平均單日</span><strong id="avgDay">—</strong><small>依有結算的日期</small></article>
+        </div>
+        <article class="chart-card">
+          <div class="chart-heading"><div><span>損益走勢</span><strong id="chartTotal">NT$0</strong></div><div class="chart-legend"><i></i>累計損益</div></div>
+          <div class="chart-wrap" id="chartWrap"><svg id="profitChart" viewBox="0 0 360 190" role="img" aria-label="損益走勢圖"></svg></div>
+        </article>
+        <article class="chart-card club-breakdown">
+          <div class="chart-heading"><div><span>俱樂部表現</span><strong>損益分布</strong></div></div>
+          <div id="clubBreakdown"></div>
+        </article>
+      </section>
+
+      <section class="view" id="historyView" data-view="history">
+        <div class="page-heading">
+          <p class="eyebrow">COMPLETE LEDGER</p>
+          <h2>完整紀錄</h2>
+          <p>每筆買入、領出與每日結算都會留在這裡。</p>
+        </div>
+        <div class="history-filters" id="historyFilters">
+          <button class="active" data-history-filter="all">全部</button>
+          <button data-history-filter="settlement">結算</button>
+          <button data-history-filter="deposit">新增</button>
+          <button data-history-filter="withdrawal">領出</button>
+        </div>
+        <div class="ledger-list full" id="historyList"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="主要選單">
+      <button class="active" data-nav="home"><span>♠</span><small>帳房</small></button>
+      <button data-nav="stats"><span>⌁</span><small>統計</small></button>
+      <button data-nav="history"><span>▤</span><small>紀錄</small></button>
+    </nav>
+  </div>
+
+  <dialog class="sheet" id="depositDialog">
+    <form method="dialog" id="depositForm">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
+      <p class="eyebrow">BUY IN</p><h2>新增籌碼</h2>
+      <p class="sheet-description">記錄買入或牌局中加碼。投入金額不會被誤算成獲利。</p>
+      <label class="field"><span>新增籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="1" required placeholder="10,000" /><b>籌碼</b></div></label>
+      <div class="calculation-preview"><span>需投入台幣</span><strong id="depositPreview">NT$0</strong></div>
+      <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：初始買入、牌局加碼" /></label>
+      <button class="submit-button" value="default" type="submit">確認新增</button>
+    </form>
+  </dialog>
+
+  <dialog class="sheet" id="withdrawDialog">
+    <form method="dialog" id="withdrawForm">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
+      <p class="eyebrow">CASH OUT</p><h2>領出籌碼</h2>
+      <p class="sheet-description">籌碼換回台幣後會從目前持有量扣除，但累計輸贏不會改變。</p>
+      <label class="field"><span>領出籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="1" required placeholder="0" /><b>籌碼</b></div><small id="availableChips">目前可領出 0 籌碼</small></label>
+      <div class="calculation-preview"><span>可領出台幣</span><strong id="withdrawPreview">NT$0</strong></div>
+      <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：部分領出" /></label>
+      <button class="submit-button cashout" value="default" type="submit">確認領出</button>
+    </form>
+  </dialog>
+
+  <dialog class="sheet" id="settleDialog">
+    <form method="dialog" id="settleForm">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
+      <p class="eyebrow">CLOSE THE TABLE</p><h2>今日結算</h2>
+      <p class="sheet-description">輸入現在實際持有的籌碼。籌碼保留到明天，不會自動領出。</p>
+      <div class="opening-balance"><span>本次結算前帳面籌碼</span><strong id="bookBalance">0</strong></div>
+      <label class="field"><span>收桌後籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="0" required placeholder="0" /><b>籌碼</b></div></label>
+      <div class="result-preview neutral" id="settleResultPreview"><span>預估本次輸贏</span><strong>NT$0</strong><small>0 籌碼</small></div>
+      <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：現金桌 5/10" /></label>
+      <button class="submit-button" value="default" type="submit">儲存今日結算</button>
+    </form>
+  </dialog>
+
+  <dialog class="sheet settings-sheet" id="settingsDialog">
+    <form method="dialog">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
+      <p class="eyebrow">DATA & RULES</p><h2>設定與備份</h2>
+      <div class="rule-card"><strong>固定換算規則</strong><p>花順：1 籌碼 = NT$1<br />馬來：1 籌碼 = NT$8</p></div>
+      <button type="button" class="settings-row" id="exportButton"><span><strong>匯出備份</strong><small>下載所有紀錄 JSON 檔</small></span><b>↗</b></button>
+      <label class="settings-row import-row"><span><strong>匯入備份</strong><small>從先前的 JSON 檔復原</small></span><b>＋</b><input type="file" id="importInput" accept="application/json" /></label>
+      <button type="button" class="settings-row danger" id="resetButton"><span><strong>清除所有資料</strong><small>此動作無法復原</small></span><b>×</b></button>
+      <button class="submit-button muted" value="cancel">完成</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
