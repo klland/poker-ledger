@@ -28,6 +28,14 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const recordTime = (record) => new Date(record.timestamp).getTime() || 0;
+  const createdTime = (record) => new Date(record.createdAt || record.timestamp).getTime() || recordTime(record);
+  const compareRecords = (a, b) => recordTime(a) - recordTime(b) || createdTime(a) - createdTime(b);
+  const toDateTimeInput = (date = new Date()) => {
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 19);
+  };
+  const toTimestamp = (value) => new Date(value).toISOString();
 
   function loadState() {
     try {
@@ -43,6 +51,41 @@
     const club = state.clubs[key];
     const rate = CLUBS[key].rate;
     return (club.balance * rate) + club.withdrawals - club.deposits;
+  }
+  function recalculateClub(key) {
+    const club = state.clubs[key];
+    const rate = CLUBS[key].rate;
+    club.events.sort(compareRecords);
+    club.settlements.sort(compareRecords);
+    club.deposits = club.events.filter((event) => event.type === 'deposit').reduce((sum, event) => sum + event.chips * rate, 0);
+    club.withdrawals = club.events.filter((event) => event.type === 'withdrawal').reduce((sum, event) => sum + event.chips * rate, 0);
+
+    let eventIndex = 0;
+    let previousClose = 0;
+    club.settlements.forEach((settlement) => {
+      let deposits = 0;
+      let withdrawals = 0;
+      while (eventIndex < club.events.length && compareRecords(club.events[eventIndex], settlement) <= 0) {
+        const event = club.events[eventIndex];
+        if (event.type === 'deposit') deposits += event.chips;
+        if (event.type === 'withdrawal') withdrawals += event.chips;
+        eventIndex += 1;
+      }
+      settlement.depositsChips = deposits;
+      settlement.withdrawalsChips = withdrawals;
+      settlement.pnlChips = settlement.endBalance + withdrawals - previousClose - deposits;
+      settlement.pnlCash = settlement.pnlChips * rate;
+      settlement.eventCount = eventIndex;
+      previousClose = settlement.endBalance;
+    });
+
+    let balance = club.settlements.length ? club.settlements.at(-1).endBalance : 0;
+    while (eventIndex < club.events.length) {
+      const event = club.events[eventIndex];
+      balance += event.type === 'deposit' ? event.chips : -event.chips;
+      eventIndex += 1;
+    }
+    club.balance = balance;
   }
   function showToast(message) {
     const toast = $('#toast');
@@ -238,63 +281,63 @@
     }
     const club = currentClub();
     const meta = clubMeta();
+    const nowValue = toDateTimeInput();
     if (id === 'depositDialog') {
-      $('#depositForm').reset(); $('#depositPreview').textContent = 'NT$0';
+      $('#depositForm').reset(); $('#depositForm [name="timestamp"]').value = nowValue; $('#depositPreview').textContent = 'NT$0';
     } else if (id === 'withdrawDialog') {
-      $('#withdrawForm').reset(); $('#availableChips').textContent = `目前可領出 ${formatNumber(club.balance)} 籌碼`; $('#withdrawPreview').textContent = 'NT$0';
+      $('#withdrawForm').reset(); $('#withdrawForm [name="timestamp"]').value = nowValue; $('#availableChips').textContent = `目前可領出 ${formatNumber(club.balance)} 籌碼`; $('#withdrawPreview').textContent = 'NT$0';
     } else if (id === 'settleDialog') {
-      $('#settleForm').reset(); $('#settleForm [name="chips"]').value = club.balance; $('#bookBalance').textContent = formatNumber(club.balance); updateSettlePreview();
+      $('#settleForm').reset(); $('#settleForm [name="timestamp"]').value = nowValue; $('#settleForm [name="chips"]').value = club.balance; $('#bookBalance').textContent = formatNumber(club.balance); updateSettlePreview();
     }
     dialog.dataset.rate = meta.rate;
     dialog.showModal();
     setTimeout(() => $('input[name="chips"]', dialog)?.focus(), 180);
   }
 
-  function addDeposit(chips, note) {
-    const club = currentClub(), cash = chips * clubMeta().rate, timestamp = new Date().toISOString();
-    club.balance += chips; club.deposits += cash;
-    club.events.push({ id: uid(), type: 'deposit', chips, cash, note, timestamp });
+  function addDeposit(chips, note, timestamp) {
+    const club = currentClub(), cash = chips * clubMeta().rate;
+    club.events.push({ id: uid(), type: 'deposit', chips, cash, note, timestamp, createdAt: new Date().toISOString() });
+    recalculateClub(state.activeClub);
     saveState(); renderAll(); showToast(`已新增 ${formatNumber(chips)} 籌碼`);
   }
-  function addWithdrawal(chips, note) {
+  function addWithdrawal(chips, note, timestamp) {
     const club = currentClub();
-    if (chips > club.balance) return showToast('領出籌碼不能超過目前持有量'), false;
-    const cash = chips * clubMeta().rate, timestamp = new Date().toISOString();
-    club.balance -= chips; club.withdrawals += cash;
-    club.events.push({ id: uid(), type: 'withdrawal', chips, cash, note, timestamp });
+    const cash = chips * clubMeta().rate;
+    const event = { id: uid(), type: 'withdrawal', chips, cash, note, timestamp, createdAt: new Date().toISOString() };
+    club.events.push(event);
+    recalculateClub(state.activeClub);
+    if (club.balance < 0) {
+      club.events = club.events.filter((item) => item.id !== event.id);
+      recalculateClub(state.activeClub);
+      return showToast('這筆領出會讓目前籌碼變成負數'), false;
+    }
     saveState(); renderAll(); showToast(`已領出 ${formatMoney(cash)}`); return true;
   }
-  function cashflowsSinceLastSettlement(club) {
-    const last = club.settlements.at(-1);
-    const since = last ? new Date(last.timestamp).getTime() : 0;
-    const pendingEvents = Number.isInteger(last?.eventCount)
-      ? club.events.slice(last.eventCount)
-      : club.events.filter((e) => new Date(e.timestamp).getTime() > since);
-    return pendingEvents.reduce((acc, e) => {
-      if (e.type === 'deposit') acc.deposits += e.chips;
-      if (e.type === 'withdrawal') acc.withdrawals += e.chips;
+  function estimateSettlement(endBalance, timestamp) {
+    const club = currentClub();
+    const candidate = { timestamp: timestamp || new Date().toISOString(), createdAt: new Date().toISOString() };
+    const last = [...club.settlements].filter((settlement) => compareRecords(settlement, candidate) < 0).sort(compareRecords).at(-1);
+    const previousClose = last ? last.endBalance : 0;
+    const flows = club.events.filter((event) => (!last || compareRecords(event, last) > 0) && compareRecords(event, candidate) <= 0).reduce((acc, event) => {
+      if (event.type === 'deposit') acc.deposits += event.chips;
+      if (event.type === 'withdrawal') acc.withdrawals += event.chips;
       return acc;
     }, { deposits: 0, withdrawals: 0 });
-  }
-  function estimateSettlement(endBalance) {
-    const club = currentClub();
-    const last = club.settlements.at(-1);
-    const previousClose = last ? last.endBalance : 0;
-    const flows = cashflowsSinceLastSettlement(club);
     const pnlChips = endBalance + flows.withdrawals - previousClose - flows.deposits;
     return { previousClose, flows, pnlChips, pnlCash: pnlChips * clubMeta().rate };
   }
-  function addSettlement(endBalance, note) {
+  function addSettlement(endBalance, note, timestamp) {
     const club = currentClub();
-    const estimate = estimateSettlement(endBalance);
-    const timestamp = new Date().toISOString();
-    club.balance = endBalance;
-    club.settlements.push({ id: uid(), timestamp, endBalance, pnlChips: estimate.pnlChips, pnlCash: estimate.pnlCash, depositsChips: estimate.flows.deposits, withdrawalsChips: estimate.flows.withdrawals, eventCount: club.events.length, note });
-    saveState(); renderAll(); showToast(`今日結算：${formatMoney(estimate.pnlCash, true)}`);
+    const settlement = { id: uid(), timestamp, endBalance, note, createdAt: new Date().toISOString() };
+    club.settlements.push(settlement);
+    recalculateClub(state.activeClub);
+    saveState(); renderAll(); showToast(`本次結算：${formatMoney(settlement.pnlCash, true)}`);
   }
   function updateSettlePreview() {
     const chips = toInt($('#settleForm [name="chips"]').value);
-    const result = estimateSettlement(chips);
+    const timestampValue = $('#settleForm [name="timestamp"]').value;
+    const result = estimateSettlement(chips, timestampValue ? toTimestamp(timestampValue) : new Date().toISOString());
+    $('#bookBalance').textContent = formatNumber(result.previousClose + result.flows.deposits - result.flows.withdrawals);
     const box = $('#settleResultPreview');
     box.className = `result-preview ${signedClass(result.pnlCash)}`;
     $('strong', box).textContent = formatMoney(result.pnlCash, true);
@@ -318,9 +361,10 @@
   $('#depositForm [name="chips"]').addEventListener('input', (e) => $('#depositPreview').textContent = formatMoney(toInt(e.target.value) * clubMeta().rate));
   $('#withdrawForm [name="chips"]').addEventListener('input', (e) => $('#withdrawPreview').textContent = formatMoney(toInt(e.target.value) * clubMeta().rate));
   $('#settleForm [name="chips"]').addEventListener('input', updateSettlePreview);
-  $('#depositForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入新增籌碼量'); addDeposit(chips, data.get('note').trim()); $('#depositDialog').close(); });
-  $('#withdrawForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入領出籌碼量'); if (addWithdrawal(chips, data.get('note').trim())) $('#withdrawDialog').close(); });
-  $('#settleForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); addSettlement(toInt(data.get('chips')), data.get('note').trim()); $('#settleDialog').close(); });
+  $('#settleForm [name="timestamp"]').addEventListener('input', updateSettlePreview);
+  $('#depositForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入新增籌碼量'); addDeposit(chips, data.get('note').trim(), toTimestamp(data.get('timestamp'))); $('#depositDialog').close(); });
+  $('#withdrawForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget), chips = toInt(data.get('chips')); if (!chips) return showToast('請輸入領出籌碼量'); if (addWithdrawal(chips, data.get('note').trim(), toTimestamp(data.get('timestamp')))) $('#withdrawDialog').close(); });
+  $('#settleForm').addEventListener('submit', (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); addSettlement(toInt(data.get('chips')), data.get('note').trim(), toTimestamp(data.get('timestamp'))); $('#settleDialog').close(); });
   $('#periodTabs').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; period = button.dataset.period; $$('#periodTabs button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('.stats-club-filter').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; statsClub = button.dataset.statsClub; $$('.stats-club-filter button').forEach((b) => b.classList.toggle('active', b === button)); renderStats(); });
   $('#historyFilters').addEventListener('click', (e) => { const button = e.target.closest('button'); if (!button) return; historyFilter = button.dataset.historyFilter; $$('#historyFilters button').forEach((b) => b.classList.toggle('active', b === button)); renderHistory(); });
@@ -334,7 +378,7 @@
     try {
       const data = JSON.parse(await e.target.files[0].text());
       if (!data?.clubs?.flush || !data?.clubs?.malay) throw new Error('invalid');
-      state = data; saveState(); renderAll(); $('#settingsDialog').close(); showToast('備份已成功匯入');
+      state = data; Object.keys(CLUBS).forEach(recalculateClub); saveState(); renderAll(); $('#settingsDialog').close(); showToast('備份已成功匯入');
     } catch (_) { showToast('無法讀取這個備份檔'); }
     e.target.value = '';
   });
@@ -344,6 +388,8 @@
   });
 
   $('#todayLabel').textContent = new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date());
+  Object.keys(CLUBS).forEach(recalculateClub);
+  saveState();
   renderAll();
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 })();

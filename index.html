@@ -155,6 +155,7 @@
       <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
       <p class="eyebrow">BUY IN</p><h2>新增籌碼</h2>
       <p class="sheet-description">記錄買入或牌局中加碼。投入金額不會被誤算成獲利。</p>
+      <label class="field date-field"><span>紀錄日期與時間</span><input name="timestamp" type="datetime-local" step="1" required /><small>忘記記錄時，可改成實際買入時間。</small></label>
       <label class="field"><span>新增籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="1" required placeholder="10,000" /><b>籌碼</b></div></label>
       <div class="calculation-preview"><span>需投入台幣</span><strong id="depositPreview">NT$0</strong></div>
       <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：初始買入、牌局加碼" /></label>
@@ -168,6 +169,7 @@
       <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
       <p class="eyebrow">CASH OUT</p><h2>領出籌碼</h2>
       <p class="sheet-description">籌碼換回台幣後會從目前持有量扣除，但累計輸贏不會改變。</p>
+      <label class="field date-field"><span>紀錄日期與時間</span><input name="timestamp" type="datetime-local" step="1" required /><small>可補登先前實際領出的時間。</small></label>
       <label class="field"><span>領出籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="1" required placeholder="0" /><b>籌碼</b></div><small id="availableChips">目前可領出 0 籌碼</small></label>
       <div class="calculation-preview"><span>可領出台幣</span><strong id="withdrawPreview">NT$0</strong></div>
       <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：部分領出" /></label>
@@ -181,6 +183,7 @@
       <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
       <p class="eyebrow">CLOSE THE TABLE</p><h2>今日結算</h2>
       <p class="sheet-description">輸入現在實際持有的籌碼。籌碼保留到明天，不會自動領出。</p>
+      <label class="field date-field"><span>結算日期與時間</span><input name="timestamp" type="datetime-local" step="1" required /><small>可補登先前忘記記錄的牌局。</small></label>
       <div class="opening-balance"><span>本次結算前帳面籌碼</span><strong id="bookBalance">0</strong></div>
       <label class="field"><span>收桌後籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="0" required placeholder="0" /><b>籌碼</b></div></label>
       <div class="result-preview neutral" id="settleResultPreview"><span>預估本次輸贏</span><strong>NT$0</strong><small>0 籌碼</small></div>

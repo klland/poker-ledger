@@ -46,6 +46,27 @@ const assert = require('node:assert/strict');
   await page.waitForTimeout(400);
   await page.screenshot({ path: '/private/tmp/poker-ledger-combined.png', fullPage: false });
 
+  // A forgotten buy-in entered after a historical settlement must recalculate
+  // that settlement without adding the same chips twice to the current balance.
+  await page.click('[data-club="flush"]');
+  await page.click('[data-open="settleDialog"]');
+  await page.fill('#settleForm [name="timestamp"]', '2026-06-15T20:00');
+  await page.fill('#settleForm [name="chips"]', '150');
+  await page.click('#settleForm button[type="submit"]');
+  assert.equal(await page.textContent('#totalProfit'), '+NT$150');
+  await page.click('[data-open="depositDialog"]');
+  await page.fill('#depositForm [name="timestamp"]', '2026-06-15T12:00');
+  await page.fill('#depositForm [name="chips"]', '100');
+  await page.click('#depositForm button[type="submit"]');
+  assert.equal(await page.textContent('#chipBalance'), '150');
+  assert.equal(await page.textContent('#totalProfit'), '+NT$50');
+  assert.equal(await page.textContent('#recentList .settlement .ledger-value strong'), '+NT$50');
+
+  await page.click('[data-club="all"]');
+  assert.equal(await page.textContent('#chipBalance'), 'NT$80,150');
+  assert.equal(await page.textContent('#totalProfit'), '+NT$16,050');
+  assert.equal(await page.textContent('#totalDeposits'), 'NT$80,100');
+
   await page.click('[data-nav="stats"]');
   assert.equal(await page.textContent('#periodProfit'), '+NT$16,000');
   assert.equal(await page.textContent('#winRate'), '100%');
