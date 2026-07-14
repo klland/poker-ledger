@@ -61,7 +61,7 @@
 
         <div class="quick-actions reveal delay-1" id="quickActions">
           <button class="action-button primary" data-open="settleDialog">
-            <span class="action-icon">✓</span><span><strong>今日結算</strong><small>輸入收桌籌碼</small></span>
+            <span class="action-icon">✓</span><span><strong>輸入今日總籌碼</strong><small>玩完剩多少，就填多少</small></span>
           </button>
           <button class="action-button" data-open="depositDialog">
             <span class="action-icon">＋</span><span><strong>新增籌碼</strong><small>買入或加碼</small></span>
@@ -181,14 +181,14 @@
     <form method="dialog" id="settleForm">
       <div class="sheet-handle"></div>
       <button class="sheet-close" value="cancel" aria-label="關閉">×</button>
-      <p class="eyebrow">CLOSE THE TABLE</p><h2>今日結算</h2>
-      <p class="sheet-description">輸入現在實際持有的籌碼。籌碼保留到明天，不會自動領出。</p>
+      <p class="eyebrow">DAILY CHIP COUNT</p><h2>今天剩多少籌碼</h2>
+      <p class="sheet-description">只要輸入今天玩完後手上全部籌碼，不是輸入今天賺多少。App 會自動計算今日輸贏，未領出的籌碼繼續留到明天。</p>
       <label class="field date-field"><span>結算日期與時間</span><input name="timestamp" type="datetime-local" step="1" required /><small>可補登先前忘記記錄的牌局。</small></label>
-      <div class="opening-balance"><span>本次結算前帳面籌碼</span><strong id="bookBalance">0</strong></div>
-      <label class="field"><span>收桌後籌碼量</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="0" required placeholder="0" /><b>籌碼</b></div></label>
-      <div class="result-preview neutral" id="settleResultPreview"><span>預估本次輸贏</span><strong>NT$0</strong><small>0 籌碼</small></div>
+      <div class="opening-balance"><span>輸入前帳面總籌碼</span><strong id="bookBalance">0</strong></div>
+      <label class="field"><span id="endingBalanceLabel">今天結束後剩餘總籌碼</span><div class="input-with-unit"><input name="chips" inputmode="numeric" pattern="[0-9]*" min="0" required placeholder="例如：12,000" /><b>籌碼</b></div><small>請填手上全部籌碼，不是單日獲利籌碼。</small></label>
+      <div class="result-preview neutral" id="settleResultPreview"><span>自動算出的今日輸贏</span><strong>NT$0</strong><small>0 籌碼</small></div>
       <label class="field"><span>備註（選填）</span><input name="note" maxlength="40" placeholder="例如：現金桌 5/10" /></label>
-      <button class="submit-button" value="default" type="submit">儲存今日結算</button>
+      <button class="submit-button" value="default" type="submit">儲存剩餘總籌碼</button>
     </form>
   </dialog>
 

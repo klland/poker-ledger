@@ -24,6 +24,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.textContent('#totalProfit'), 'NT$0');
 
   await page.click('[data-open="settleDialog"]');
+  assert.equal(await page.textContent('#endingBalanceLabel'), '今天結束後剩餘總籌碼');
   await page.fill('#settleForm [name="chips"]', '12000');
   assert.equal(await page.textContent('#settleResultPreview strong'), '+NT$16,000');
   await page.click('#settleForm button[type="submit"]');
