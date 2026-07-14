@@ -30,6 +30,9 @@
     <main>
       <section class="view active" id="homeView" data-view="home">
         <div class="club-switcher" role="tablist" aria-label="俱樂部">
+          <button role="tab" class="club-tab combined" data-club="all" aria-selected="false">
+            <span class="club-suit">♣</span><span>兩館合計</span><small>折合台幣</small>
+          </button>
           <button role="tab" class="club-tab active" data-club="flush" aria-selected="true">
             <span class="club-suit">♠</span><span>花順</span><small>1 : 1</small>
           </button>
@@ -43,16 +46,20 @@
             <span id="activeClubLabel">花順俱樂部</span>
             <span class="rate-pill" id="activeRateLabel">1 籌碼 = NT$1</span>
           </div>
-          <p class="balance-label">目前持有籌碼</p>
-          <div class="balance-number"><strong id="chipBalance">0</strong><span>籌碼</span></div>
-          <div class="value-line">目前價值 <strong id="chipValue">NT$0</strong></div>
+          <p class="balance-label" id="balanceLabel">目前持有籌碼</p>
+          <div class="balance-number"><strong id="chipBalance">0</strong><span id="balanceUnit">籌碼</span></div>
+          <div class="value-line" id="valueLine">目前價值 <strong id="chipValue">NT$0</strong></div>
+          <div class="combined-breakdown" id="combinedBreakdown" hidden>
+            <div><span>♠ 花順</span><strong id="combinedFlushValue">0 籌碼 · NT$0</strong></div>
+            <div><span>♦ 馬來</span><strong id="combinedMalayValue">0 籌碼 · NT$0</strong></div>
+          </div>
           <div class="profit-stamp neutral" id="profitStamp">
             <span>累計淨輸贏</span>
             <strong id="totalProfit">NT$0</strong>
           </div>
         </article>
 
-        <div class="quick-actions reveal delay-1">
+        <div class="quick-actions reveal delay-1" id="quickActions">
           <button class="action-button primary" data-open="settleDialog">
             <span class="action-icon">✓</span><span><strong>今日結算</strong><small>輸入收桌籌碼</small></span>
           </button>
@@ -62,6 +69,11 @@
           <button class="action-button" data-open="withdrawDialog">
             <span class="action-icon">↗</span><span><strong>領出籌碼</strong><small>換回台幣</small></span>
           </button>
+        </div>
+
+        <div class="combined-actions reveal delay-1" id="combinedActions" hidden>
+          <p>新增、結算或領出時，請先選擇要操作的俱樂部。</p>
+          <div><button data-select-club="flush">♠ 操作花順</button><button data-select-club="malay">♦ 操作馬來</button></div>
         </div>
 
         <section class="summary-strip reveal delay-2" aria-label="帳戶摘要">

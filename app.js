@@ -58,17 +58,48 @@
 
   function renderHome() {
     const key = state.activeClub;
-    const club = currentClub();
-    const meta = clubMeta();
-    const pnl = totalPnl(key);
+    const isCombined = key === 'all';
     $$('.club-tab').forEach((tab) => {
       const active = tab.dataset.club === key;
       tab.classList.toggle('active', active);
       tab.setAttribute('aria-selected', active);
     });
+    $('#quickActions').hidden = isCombined;
+    $('#combinedActions').hidden = !isCombined;
+    $('#combinedBreakdown').hidden = !isCombined;
+    $('#valueLine').hidden = isCombined;
+    $('.balance-card').classList.toggle('combined-mode', isCombined);
+
+    if (isCombined) {
+      const flush = state.clubs.flush;
+      const malay = state.clubs.malay;
+      const flushValue = flush.balance * CLUBS.flush.rate;
+      const malayValue = malay.balance * CLUBS.malay.rate;
+      const pnl = totalPnl('flush') + totalPnl('malay');
+      $('#activeClubLabel').textContent = '兩館合計帳戶';
+      $('#activeRateLabel').textContent = '統一換算台幣';
+      $('#balanceLabel').textContent = '目前籌碼總價值';
+      $('#chipBalance').textContent = formatMoney(flushValue + malayValue);
+      $('#balanceUnit').textContent = '台幣';
+      $('#combinedFlushValue').textContent = `${formatNumber(flush.balance)} 籌碼 · ${formatMoney(flushValue)}`;
+      $('#combinedMalayValue').textContent = `${formatNumber(malay.balance)} 籌碼 · ${formatMoney(malayValue)}`;
+      $('#totalProfit').textContent = formatMoney(pnl, true);
+      $('#profitStamp').className = `profit-stamp ${signedClass(pnl)}`;
+      $('#totalDeposits').textContent = formatMoney(flush.deposits + malay.deposits);
+      $('#totalWithdrawals').textContent = formatMoney(flush.withdrawals + malay.withdrawals);
+      $('#settlementCount').textContent = formatNumber(flush.settlements.length + malay.settlements.length);
+      renderRecent();
+      return;
+    }
+
+    const club = currentClub();
+    const meta = clubMeta();
+    const pnl = totalPnl(key);
     $('#activeClubLabel').textContent = `${meta.name}俱樂部`;
     $('#activeRateLabel').textContent = `1 籌碼 = NT$${meta.rate}`;
+    $('#balanceLabel').textContent = '目前持有籌碼';
     $('#chipBalance').textContent = formatNumber(club.balance);
+    $('#balanceUnit').textContent = '籌碼';
     $('#chipValue').textContent = formatMoney(club.balance * meta.rate);
     $('#totalProfit').textContent = formatMoney(pnl, true);
     $('#profitStamp').className = `profit-stamp ${signedClass(pnl)}`;
@@ -106,7 +137,7 @@
     return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
   function renderRecent() {
-    const items = allLedgerItems().filter((item) => item.clubKey === state.activeClub).slice(0, 4);
+    const items = allLedgerItems().filter((item) => state.activeClub === 'all' || item.clubKey === state.activeClub).slice(0, 4);
     $('#recentEmpty').hidden = items.length > 0;
     $('#recentList').innerHTML = items.map(ledgerRow).join('');
   }
@@ -197,6 +228,14 @@
 
   function openDialog(id) {
     const dialog = document.getElementById(id);
+    if (id === 'settingsDialog') {
+      dialog.showModal();
+      return;
+    }
+    if (state.activeClub === 'all') {
+      showToast('請先選擇花順或馬來俱樂部');
+      return;
+    }
     const club = currentClub();
     const meta = clubMeta();
     if (id === 'depositDialog') {
@@ -271,6 +310,7 @@
   }
 
   $$('.club-tab').forEach((button) => button.addEventListener('click', () => { state.activeClub = button.dataset.club; saveState(); renderHome(); }));
+  $$('[data-select-club]').forEach((button) => button.addEventListener('click', () => { state.activeClub = button.dataset.selectClub; saveState(); renderHome(); }));
   $$('[data-open]').forEach((button) => button.addEventListener('click', () => openDialog(button.dataset.open)));
   $('#settingsButton').addEventListener('click', () => openDialog('settingsDialog'));
   $$('.bottom-nav button').forEach((button) => button.addEventListener('click', () => navigate(button.dataset.nav)));

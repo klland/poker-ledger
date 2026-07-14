@@ -41,6 +41,7 @@ h2 { margin: 0; font-size: 29px; }
 .view.active { display: block; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(7px); } }
 .club-switcher { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--felt); padding: 8px 18px 26px; }
+.club-tab.combined { grid-column: 1 / -1; min-height: 42px; }
 .club-tab { border: 1px solid rgba(255,255,255,.11); background: rgba(255,255,255,.04); color: rgba(255,255,255,.6); min-height: 48px; border-radius: 12px; display: grid; grid-template-columns: 25px 1fr auto; align-items: center; padding: 0 12px; text-align: left; transition: .25s ease; }
 .club-tab.active { color: var(--felt); background: var(--paper-bright); border-color: var(--paper-bright); transform: translateY(-1px); }
 .club-tab .club-suit { font-size: 20px; color: var(--red); }
@@ -49,6 +50,7 @@ h2 { margin: 0; font-size: 29px; }
 .club-tab small { font-weight: 800; opacity: .65; }
 .balance-card { margin: -10px 18px 0; min-height: 256px; padding: 20px; border: 1px solid rgba(91,65,30,.2); background: var(--paper-bright); border-radius: 5px 5px 22px 5px; box-shadow: 0 13px 35px rgba(38,32,22,.13); position: relative; overflow: hidden; }
 .balance-card::before { content: "♠"; position: absolute; right: -8px; bottom: -65px; font-family: serif; font-size: 210px; line-height: 1; color: rgba(16,44,39,.038); transform: rotate(-7deg); }
+.balance-card.combined-mode::before { content: "♣"; }
 .balance-card::after { content: ""; position: absolute; inset: 8px; border: 1px solid rgba(201,159,82,.25); border-radius: 2px 2px 16px 2px; pointer-events: none; }
 .card-topline { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; font-size: 12px; font-weight: 800; }
 .rate-pill { color: var(--green); background: rgba(35,114,91,.09); border-radius: 999px; padding: 5px 9px; }
@@ -58,12 +60,17 @@ h2 { margin: 0; font-size: 29px; }
 .balance-number span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .value-line { font-size: 13px; color: var(--muted); margin-top: 8px; }
 .value-line strong { color: var(--ink); }
+.combined-breakdown { margin-top: 10px; position: relative; z-index: 1; display: grid; gap: 5px; }
+.combined-breakdown[hidden] { display: none; }
+.combined-breakdown div { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; color: var(--muted); }
+.combined-breakdown strong { color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .profit-stamp { margin-top: 22px; padding-top: 13px; border-top: 1px dashed rgba(20,33,30,.2); display: flex; justify-content: space-between; align-items: baseline; position: relative; z-index: 1; }
 .profit-stamp span { color: var(--muted); font-size: 12px; }
 .profit-stamp strong { font-family: "Iowan Old Style", Georgia, serif; font-size: 24px; }
 .positive strong, .result-preview.positive strong { color: var(--green); }
 .negative strong, .result-preview.negative strong { color: var(--red); }
 .quick-actions { padding: 16px 18px 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.quick-actions[hidden], .value-line[hidden] { display: none; }
 .action-button { min-height: 70px; border: 1px solid var(--line); background: rgba(255,250,240,.7); border-radius: 14px; display: flex; align-items: center; gap: 10px; padding: 11px; text-align: left; transition: transform .15s ease, background .15s ease; }
 .action-button:active { transform: scale(.97); }
 .action-button.primary { grid-column: 1 / -1; color: var(--paper-bright); background: var(--felt); border-color: var(--felt); min-height: 78px; }
@@ -73,6 +80,11 @@ h2 { margin: 0; font-size: 29px; }
 .action-button strong { font-size: 14px; }
 .action-button small { margin-top: 3px; color: var(--muted); font-size: 10px; }
 .primary small { color: rgba(255,255,255,.58); }
+.combined-actions { margin: 16px 18px 4px; padding: 14px; border: 1px solid rgba(201,159,82,.32); background: rgba(201,159,82,.09); border-radius: 14px; }
+.combined-actions[hidden] { display: none; }
+.combined-actions p { margin: 0 0 11px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.combined-actions div { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.combined-actions button { min-height: 39px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-bright); font-size: 11px; font-weight: 800; }
 .summary-strip { margin: 12px 18px 2px; display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--line); padding: 14px 0; }
 .summary-strip div { padding: 0 9px; border-right: 1px solid var(--line); min-width: 0; }
 .summary-strip div:first-child { padding-left: 0; }.summary-strip div:last-child { border: 0; padding-right: 0; }

@@ -37,6 +37,15 @@ const assert = require('node:assert/strict');
   assert.equal(await page.textContent('#chipBalance'), '10,000');
   assert.equal(await page.textContent('#totalProfit'), '+NT$16,000');
 
+  await page.click('[data-club="all"]');
+  assert.equal(await page.textContent('#chipBalance'), 'NT$80,000');
+  assert.equal(await page.textContent('#totalProfit'), '+NT$16,000');
+  assert.equal(await page.textContent('#totalDeposits'), 'NT$80,000');
+  assert.equal(await page.textContent('#totalWithdrawals'), 'NT$16,000');
+  assert.equal(await page.textContent('#combinedMalayValue'), '10,000 籌碼 · NT$80,000');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: '/private/tmp/poker-ledger-combined.png', fullPage: false });
+
   await page.click('[data-nav="stats"]');
   assert.equal(await page.textContent('#periodProfit'), '+NT$16,000');
   assert.equal(await page.textContent('#winRate'), '100%');
